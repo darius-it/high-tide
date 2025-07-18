@@ -10,6 +10,8 @@ from tidalapi.media import Track
 from tidalapi.playlist import Playlist
 from tidalapi.mix import Mix
 
+from tidalapi.types import ItemOrder, OrderDirection
+
 from ..pages import HTArtistPage
 from ..pages import HTAlbumPage
 from ..pages import HTMixPage
@@ -64,7 +66,7 @@ def get_favourites():
 
     try:
         favourite_artists = user.favorites.artists()
-        favourite_tracks = user.favorites.tracks()
+        favourite_tracks = user.favorites.tracks(order = ItemOrder.Date, order_direction = OrderDirection.Descending)
         favourite_albums = user.favorites.albums()
         favourite_playlists = user.favorites.playlists()
         favourite_mixes = user.favorites.mixes()
