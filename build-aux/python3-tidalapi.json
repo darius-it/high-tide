@@ -47,8 +47,8 @@
         },
         {
             "type": "file",
-            "url": "https://files.pythonhosted.org/packages/db/a6/efe5044ab4e84e945a3b84e40af3e4ff68f17de20c1fe2d58ed821b1d267/tidalapi-0.8.3-py3-none-any.whl",
-            "sha256": "b6698e308cc9f4edac4b9c1bc22773f040d4de0bbac212defcbe33a93f66b3c7"
+            "url": "https://files.pythonhosted.org/packages/ce/f2/9c1eaa74d3486ffad747e685749df700ccaebc84dca14b9f9487a8188c27/tidalapi-0.8.4-py3-none-any.whl",
+            "sha256": "23cdb35cd543cb11c8715236d6051547c96d7b034aa6a8fd74690972b1705658"
         },
         {
             "type": "file",
