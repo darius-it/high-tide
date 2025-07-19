@@ -57,7 +57,7 @@ class fromFunctionPage(Page):
         self.sort_button = None
 
         self.sort_items_by = ItemOrder.Date
-        self.order_direction = OrderDirection.Ascending
+        self.order_direction = OrderDirection.Descending
         self.order_direction_changed = False
 
         self.handler_id = self.scrolled_window.connect(
