@@ -29,6 +29,8 @@ from ..lib import utils
 
 from ..disconnectable_iface import IDisconnectable
 
+from tidalapi.types import ItemOrder, OrderDirection
+
 
 class fromFunctionPage(Page):
     __gtype_name__ = "fromFunctionPage"
@@ -52,6 +54,12 @@ class fromFunctionPage(Page):
         self.items_limit = 50
         self.items_n = 0
 
+        self.sort_button = None
+
+        self.sort_items_by = ItemOrder.Date
+        self.order_direction = OrderDirection.Ascending
+        self.order_direction_changed = False
+
         self.handler_id = self.scrolled_window.connect(
             "edge-overshot", self.on_edge_overshot
         )
@@ -72,12 +80,64 @@ class fromFunctionPage(Page):
 
         self._page_loaded()
 
+    def add_page_scaffolding(self):
+        # Create a horizontal box to act as a filter/sort bar
+        filter_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        filter_bar.add_css_class("toolbar")
+        filter_bar.set_margin_top(12)
+        filter_bar.set_margin_bottom(12)
+        filter_bar.set_margin_start(12)
+        filter_bar.set_margin_end(12)
+
+        # Helper to create sort buttons
+        def create_sort_button(label, sort_key):
+            btn = Gtk.Button(label=label)
+            btn.connect("clicked", lambda _, key=sort_key: self.on_sort_clicked(key))
+            return btn
+
+        # Add sort buttons for Name, Artist, Album, Date Added
+        name_btn = create_sort_button("Name", "name")
+        artist_btn = create_sort_button("Artist", "artist")
+        album_btn = create_sort_button("Album", "album")
+        date_btn = create_sort_button("Date Added", "date_added")
+
+        filter_bar.append(name_btn)
+        filter_bar.append(artist_btn)
+        filter_bar.append(album_btn)
+        filter_bar.append(date_btn)
+
+        GLib.idle_add(self.page_content.append, filter_bar)
+        self.sort_button = filter_bar
+
+        self.parent = Gtk.ListBox(
+            css_classes=["tracks-list-box"],
+            margin_bottom=12,
+            margin_start=12,
+            margin_end=12,
+            margin_top=12,
+        )
+        GLib.idle_add(self.page_content.append, self.parent)
+        self.signals.append((
+            self.parent,
+            self.parent.connect("row-activated", self.on_tracks_row_selected),
+        ))
+
     def th_load_items(self):
         new_items = []
         if self.function:
-            new_items = self.function(limit=self.items_limit, offset=(self.items_n))
-            self.items.extend(new_items)
-            if new_items == []:
+            new_items = self.function(
+                limit=self.items_limit,
+                offset=(self.items_n),
+                sort_by=self.sort_items_by,
+                order_direction=self.order_direction
+            )
+            # If we're reloading with new tracks (e.g., sort changed), clear old content
+            if self.items_n == 0 or self.order_direction_changed and self.parent is not None:
+                self.add_page_scaffolding()
+            else:
+                self.items.extend(new_items)
+
+            if not new_items:
                 self.scrolled_window.disconnect(self.handler_id)
                 return
         else:
@@ -90,26 +150,45 @@ class fromFunctionPage(Page):
             self.add_cards(new_items)
 
         self.items_n += self.items_limit
+        # Reset flag after reload
+        self.order_direction_changed = False
 
     def add_tracks(self, new_items):
         if self.parent is None:
-            self.parent = Gtk.ListBox(
-                css_classes=["tracks-list-box"],
-                margin_bottom=12,
-                margin_start=12,
-                margin_end=12,
-                margin_top=12,
-            )
-            GLib.idle_add(self.page_content.append, self.parent)
-            self.signals.append((
-                self.parent,
-                self.parent.connect("row-activated", self.on_tracks_row_selected),
-            ))
+            print("Scaffolding page initially")
+            self.add_page_scaffolding()
 
         for index, track in enumerate(new_items):
             listing = self.get_track_listing(track)
             listing.set_name(str(index + self.items_n))
             GLib.idle_add(self.parent.append, listing)
+
+    def on_sort_clicked(self, filter_key):
+        print("Sort button clicked")
+
+        if filter_key == "name":
+            self.sort_items_by = ItemOrder.Name
+        elif filter_key == "artist":
+            self.sort_items_by = ItemOrder.Artist
+        elif filter_key == "album":
+            self.sort_items_by = ItemOrder.Album
+        elif filter_key == "date_added":
+            self.sort_items_by = ItemOrder.Date
+
+        self.order_direction = OrderDirection.Ascending if self.order_direction == OrderDirection.Descending else OrderDirection.Descending
+        print(f"New order direction: {self.order_direction}")
+
+        self.order_direction_changed = True
+        self.items_n = 0
+
+        # FIXME Remove old list, this is probably not the right way to do it in GTK!
+        if self.parent:
+            self.page_content.remove(self.parent)
+            self.page_content.remove(self.sort_button)
+            self.parent = None
+
+        self.th_load_items()
+        self._page_loaded()
 
     def add_cards(self, new_items):
         if self.parent is None:

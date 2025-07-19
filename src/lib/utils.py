@@ -83,6 +83,14 @@ def get_favourites():
     print(f"Playlist and Favorite Playlists: {len(playlist_and_favorite_playlists)}")
     print(f"User Playlists: {len(user_playlists)}")
 
+def get_favourite_tracks(limit, offset, sort_by=ItemOrder.Date, order_direction=OrderDirection.Descending):
+    """Returns the user's favorite tracks sorted by the specified order."""
+    try:
+        return session.user.favorites.tracks(limit=limit, offset=offset, order=sort_by, order_direction=order_direction)
+    except Exception as e:
+        print(f"Error fetching favorite tracks: {e}")
+        return []
+
 
 def is_favourited(item):
     global favourite_mixes

@@ -66,3 +66,4 @@ class HTCollectionPage(Page):
             carousel.set_items(carousel_content, "playlist")
         elif isinstance(carousel_content[0], Track):
             carousel.set_items(carousel_content, "track")
+            carousel.set_more_function("track", utils.get_favourite_tracks)
